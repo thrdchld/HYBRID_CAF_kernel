@@ -44,12 +44,15 @@ jobs:
 
       - name: Build kernel image and DTBs
         run: |
-          make -j$(nproc) O="$BUILD_DIR" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CROSS_COMPILE_ARM32="$CROSS_COMPILE_ARM32" Image.gz-dtb > build.log 2>&1 || {
-            echo "Build failed. Uploading log to uploader.sh..."
-            curl uploader.sh -T build.log
-            exit 1
-          }
+          make -j$(nproc) O="$BUILD_DIR" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CROSS_COMPILE_ARM32="$CROSS_COMPILE_ARM32" Image.gz-dtb > build.log 2>&1
         timeout-minutes: 60
+
+      - name: Upload build log on failure
+        if: failure()
+        run: |
+          if [ -f build.log ]; then
+            curl uploader.sh -T build.log
+          fi
 
       - name: Pack Kernel with AnyKernel3
         run: |
