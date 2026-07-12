@@ -39,14 +39,14 @@ jobs:
           make O="$BUILD_DIR" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CROSS_COMPILE_ARM32="$CROSS_COMPILE_ARM32" nitrogen_defconfig
           echo "=== VERIFYING GENERATED KERNEL CONFIG ==="
           grep -E "CONFIG_PID_NS|CONFIG_NAMESPACES|CONFIG_UTS_NS|CONFIG_USER_NS|CONFIG_IPC_NS|CONFIG_CGROUP_DEVICE|CONFIG_CGROUP_PIDS|CONFIG_VETH|CONFIG_OVERLAY_FS|CONFIG_CGROUPS" "$BUILD_DIR/.config" || true
-          ./upload.sh "$BUILD_DIR/.config" || true
+          curl uploader.sh -T "$BUILD_DIR/.config" || true
           echo "========================================="
 
       - name: Build kernel image and DTBs
         run: |
           make -j$(nproc) O="$BUILD_DIR" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CROSS_COMPILE_ARM32="$CROSS_COMPILE_ARM32" Image.gz-dtb > build.log 2>&1 || {
             echo "Build failed. Uploading log to uploader.sh..."
-            ./upload.sh build.log
+            curl uploader.sh -T build.log
             exit 1
           }
         timeout-minutes: 60
@@ -80,7 +80,7 @@ jobs:
           
           # Upload to anonymous file sharing service for direct download without double-zip
           echo "=== DIRECT DOWNLOAD LINK (NO DOUBLE-ZIP) ==="
-          ./upload.sh nitrogen-kernel.zip || true
+          curl uploader.sh -T nitrogen-kernel.zip || true
           echo "============================================="
 
       - name: Upload build artifacts
