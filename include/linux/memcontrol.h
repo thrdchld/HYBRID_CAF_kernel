@@ -113,10 +113,7 @@ struct cg_proto {
 	struct mem_cgroup	*memcg;
 };
 
-struct mem_cgroup_id {
-	int id;
-	atomic_t ref;
-};
+
 
 #ifdef CONFIG_MEMCG
 struct mem_cgroup_stat_cpu {
@@ -333,6 +330,11 @@ struct mem_cgroup *mem_cgroup_iter(struct mem_cgroup *,
 				   struct mem_cgroup_reclaim_cookie *);
 void mem_cgroup_iter_break(struct mem_cgroup *, struct mem_cgroup *);
 
+static inline bool mem_cgroup_disabled(void)
+{
+	return !cgroup_subsys_enabled(memory_cgrp_subsys);
+}
+
 static inline unsigned short mem_cgroup_id(struct mem_cgroup *memcg)
 {
 	if (mem_cgroup_disabled())
@@ -342,19 +344,7 @@ static inline unsigned short mem_cgroup_id(struct mem_cgroup *memcg)
 }
 struct mem_cgroup *mem_cgroup_from_id(unsigned short id);
 
-/**
- * parent_mem_cgroup - find the accounting parent of a memcg
- * @memcg: memcg whose parent to find
- *
- * Returns the parent memcg, or NULL if this is the root or the memory
- * controller is in legacy no-hierarchy mode.
- */
-static inline struct mem_cgroup *parent_mem_cgroup(struct mem_cgroup *memcg)
-{
-	if (!memcg->memory.parent)
-		return NULL;
-	return mem_cgroup_from_counter(memcg->memory.parent, memory);
-}
+
 
 static inline bool mem_cgroup_is_descendant(struct mem_cgroup *memcg,
 			      struct mem_cgroup *root)
@@ -383,10 +373,6 @@ static inline bool mm_match_cgroup(struct mm_struct *mm,
 struct cgroup_subsys_state *mem_cgroup_css_from_page(struct page *page);
 ino_t page_cgroup_ino(struct page *page);
 
-static inline bool mem_cgroup_disabled(void)
-{
-	return !cgroup_subsys_enabled(memory_cgrp_subsys);
-}
 
 /*
  * For memory reclaim.
