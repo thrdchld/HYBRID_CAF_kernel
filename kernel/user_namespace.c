@@ -608,6 +608,7 @@ static ssize_t map_write(struct file *file, const char __user *buf,
 	/* Only allow < page size writes at the beginning of the file */
 	if ((*ppos != 0) || (count >= PAGE_SIZE))
 		return -EINVAL;
+	unsigned long page = 0;
 
 	/* Get a buffer */
 	page = __get_free_page(GFP_TEMPORARY);
