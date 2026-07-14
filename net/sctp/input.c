@@ -859,15 +859,28 @@ static struct sctp_association *__sctp_lookup_association(
 	struct sctp_transport *transport;
 	int hash;
 
-	t = sctp_addrs_lookup_transport(net, local, peer);
-	if (!t || !sctp_transport_hold(t))
-		goto out;
+	/* Optimize here for direct hit, only listening connections can
+	 * have wildcards anyways.
+	 */
+	hash = sctp_assoc_hashfn(net, ntohs(local->v4.sin_port),
+				 ntohs(peer->v4.sin_port));
+	head = &sctp_assoc_hashtable[hash];
+	read_lock(&head->lock);
+	sctp_for_each_hentry(epb, &head->chain) {
+		asoc = sctp_assoc(epb);
+		transport = sctp_assoc_is_match(asoc, net, local, peer);
+		if (transport)
+			goto hit;
+	}
 
 	read_unlock(&head->lock);
 
 	return NULL;
 
-out:
+hit:
+	*pt = transport;
+	sctp_association_hold(asoc);
+	read_unlock(&head->lock);
 	return asoc;
 }
 
